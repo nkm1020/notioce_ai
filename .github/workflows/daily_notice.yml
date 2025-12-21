@@ -35,6 +35,7 @@ jobs:
         EMAIL_ADDRESS: ${{ secrets.EMAIL_ADDRESS }}
         EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
         TO_EMAIL: ${{ secrets.TO_EMAIL }}
+        GITHUB_EVENT_NAME: ${{ github.event_name }}
       run: python notice_crawler.py
 
     - name: 변경사항(보낸 목록) 저장 및 커밋

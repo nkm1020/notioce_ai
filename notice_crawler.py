@@ -105,10 +105,17 @@ def send_email(subject, body):
 
 # 메인 실행 로직
 def main():
-    print("공지사항 확인 중...")
+    # GitHub Actions에서 실행 이벤트 확인 (schedule vs workflow_dispatch)
+    event_name = os.getenv("GITHUB_EVENT_NAME") # daily_notice.yml에서 넘겨줘야 함
+    is_manual_run = (event_name == "workflow_dispatch")
     
-    # 1. 이미 보낸 목록 로드
-    sent_links = load_sent_notices()
+    print(f"실행 모드: {'수동(테스트)' if is_manual_run else '자동(일반)'}")
+
+    # 1. 이미 보낸 목록 로드 (수동 실행일 때는 무시)
+    if not is_manual_run:
+        sent_links = load_sent_notices()
+    else:
+        sent_links = [] # 테스트니까 다 새로운 걸로 간주
     
     try:
         all_notices = get_inha_notices()
@@ -123,11 +130,19 @@ def main():
         if notice['link'] not in sent_links:
             new_notices.append(notice)
     
+    # [수동 실행]이거나 [너무 많으면] 상위 3개만 보냄
+    # 수동 실행 시: 무조건 상위 3개 테스트
+    if is_manual_run and len(new_notices) > 3:
+        new_notices = new_notices[:3]
+    # 자동 실행 시: 혹시 너무 많이 쌓였으면 10개까지만 (스팸 방지 안전장치)
+    elif len(new_notices) > 10:
+        new_notices = new_notices[:10]
+
     if not new_notices:
         print("새로운 공지사항이 없습니다.")
         return
 
-    print(f"새로운 공지사항 {len(new_notices)}개를 발견했습니다.")
+    print(f"보낼 공지사항: {len(new_notices)}개")
     report_content = ""
     
     # 최신순(위에서부터) 처리되지만, 이메일에는 순서대로 넣음
@@ -146,21 +161,26 @@ def main():
             report_content += f"요약:\n{summary}\n"
             report_content += "-" * 30 + "\n\n"
             
-            # 처리 성공 시 목록에 추가
-            sent_links.append(notice['link'])
+            # [자동 실행]일 때만 저장 (테스트는 기록 안 남김)
+            if not is_manual_run:
+                sent_links.append(notice['link'])
             
         except Exception as e:
             print(f"처리 중 오류 ({notice['title']}): {e}")
     
     if report_content:
         # 메일 발송
+        subject = f"[인하대] {'(테스트) ' if is_manual_run else ''}새로운 공지사항 ({len(new_notices)}건)"
         try:
-            send_email(f"[인하대] 새로운 공지사항 ({len(new_notices)}건)", report_content)
+            send_email(subject, report_content)
             print("이메일 발송 완료!")
             
-            # 3. 성공적으로 다 돌았으면 파일 업데이트
-            save_sent_notices(sent_links)
-            print("보낸 목록 업데이트 완료.")
+            # 3. 파일 업데이트 (자동 실행일 때만)
+            if not is_manual_run:
+                save_sent_notices(sent_links)
+                print("보낸 목록 업데이트 완료.")
+            else:
+                print("테스트 모드이므로 보낸 목록을 업데이트하지 않습니다.")
             
         except Exception as e:
             print(f"이메일 발송 실패: {e}")
