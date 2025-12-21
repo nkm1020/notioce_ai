@@ -2,10 +2,8 @@ name: Daily Inha Notice
 
 on:
   schedule:
-    # 1. 매일 한국 시간 오전 9시 (UTC 00:00) - 알림용
+    # 매일 한국 시간 오전 9시 실행 (UTC 기준 0시)
     - cron: '0 0 * * *'
-    # 2. 매 30분마다 실행 - 답장 확인용
-    - cron: '*/30 * * * *'
   # 수동으로 버튼 눌러서 실행해보고 싶을 때 필요
   workflow_dispatch:
 
@@ -15,7 +13,7 @@ jobs:
 
     permissions:
       contents: write
-      
+
     steps:
     - name: 저장소 코드 가져오기
       uses: actions/checkout@v3
@@ -30,29 +28,20 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: 알림 모드 실행 (새 공지)
-      if: github.event.schedule == '0 0 * * *' || github.event_name == 'workflow_dispatch'
+    - name: 파이썬 스크립트 실행
       env:
+        # 아까 Settings에 등록한 비밀번호들을 환경변수로 불러옴
         GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         EMAIL_ADDRESS: ${{ secrets.EMAIL_ADDRESS }}
         EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
         TO_EMAIL: ${{ secrets.TO_EMAIL }}
-      run: python notice_crawler.py --mode notify
-      
-    - name: 답장 확인 모드 실행 (30분마다)
-      if: github.event.schedule != '0 0 * * *' && github.event_name != 'workflow_dispatch'
-      env:
-        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        EMAIL_ADDRESS: ${{ secrets.EMAIL_ADDRESS }}
-        EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
-        TO_EMAIL: ${{ secrets.TO_EMAIL }}
-      run: python notice_crawler.py --mode reply
+      run: python notice_crawler.py
 
     - name: 변경사항(보낸 목록) 저장 및 커밋
-      if: github.event.schedule == '0 0 * * *' || github.event_name == 'workflow_dispatch'
       run: |
         git config --global user.name 'Notice Bot'
         git config --global user.email 'bot@noreply.github.com'
         git add sent_notices.json
+        # 변경사항이 있을 때만 커밋 (오류 방지)
         git commit -m "Update sent notices list" || echo "새로운 변경사항이 없습니다."
         git push
