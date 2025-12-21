@@ -11,6 +11,9 @@ jobs:
   run-crawler:
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: write
+      
     steps:
     - name: 저장소 코드 가져오기
       uses: actions/checkout@v3
@@ -33,3 +36,12 @@ jobs:
         EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
         TO_EMAIL: ${{ secrets.TO_EMAIL }}
       run: python notice_crawler.py
+      
+    - name: 변경사항(보낸 목록) 저장 및 커밋
+      run: |
+        git config --global user.name 'Notice Bot'
+        git config --global user.email 'bot@noreply.github.com'
+        git add sent_notices.json
+        # 변경사항이 있을 때만 커밋 (오류 방지)
+        git commit -m "Update sent notices list" || echo "새로운 변경사항이 없습니다."
+        git push
