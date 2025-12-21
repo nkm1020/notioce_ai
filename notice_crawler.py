@@ -106,20 +106,3 @@ def send_email(subject, body):
         server.starttls()
         server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
         server.send_message(msg)
-
-# 메일 발송 테스트용 메인 함수
-def main():
-    print("메일 발송 테스트 시작")
-    
-    # 공지사항 크롤링 로직 잠시 무시하고 강제로 메일 보내기
-    try:
-        send_email(
-            f"[테스트] 인하대 공지봇 연결 확인 {datetime.now().strftime('%H:%M:%S')}", 
-            "이 메일이 도착했다면 GitHub Actions 설정과 SMTP 비밀번호가 완벽한 것입니다."
-        )
-        print("이메일 발송 완료! (테스트 성공)")
-    except Exception as e:
-        print(f"이메일 전송 실패: {e}")
-
-if __name__ == "__main__":
-    main()
