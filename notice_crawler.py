@@ -167,7 +167,7 @@ def summarize_text(text):
     if len(text) > 5000:
         text = text[:5000]
         
-    prompt = f"다음은 대학교 공지사항이야. 내용을 읽기 쉽게 3줄로 핵심만 요약해줘. 말투는 '~함'체로 간결하게 해줘:\n\n{text}"
+    prompt = f"다음은 대학교 공지사항이야. 내용을 읽기 쉽게 핵심만 요약해줘. 말투는 '~함'체로 간결하게 해줘:\n\n{text}"
     
     max_retries = 3
     for attempt in range(max_retries):
