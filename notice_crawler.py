@@ -92,11 +92,18 @@ def get_inha_notices(driver):
     # 오늘과 어제 날짜 계산
     now = datetime.now()
     today = now.date()
-    yesterday_date = today.replace(day=today.day - 1) # simple logic, might fail on 1st of month. using timedelta is better
-    from datetime import timedelta
-    yesterday = today - timedelta(days=1)
     
-    print(f"기준 날짜: {today} ~ {yesterday}")
+    # 요일 확인 (0: 월, 1: 화, ... 4: 금, 5: 토, 6: 일)
+    weekday = today.weekday()
+    
+    # 월요일이면 "오늘" 공지만, 그 외에는 "어제+오늘" 공지
+    if weekday == 0:
+        target_date = today
+        print(f"오늘은 월요일입니다. 당일({today}) 공지만 수집합니다.")
+    else:
+        from datetime import timedelta
+        target_date = today - timedelta(days=1)
+        print(f"평일(화~금)입니다. 어제({target_date})부터 오늘({today})까지의 공지를 수집합니다.")
 
     filtered_notices = []
     
@@ -112,8 +119,8 @@ def get_inha_notices(driver):
             clean_date = date_text.rstrip('.')
             notice_date = datetime.strptime(clean_date, "%Y.%m.%d").date()
             
-            # 날짜 필터링 (오늘 또는 어제)
-            if notice_date < yesterday:
+            # 날짜 필터링 (기준 날짜보다 이전이면 건너뜀)
+            if notice_date < target_date:
                 continue
 
             # 제목 및 링크 요소 찾기

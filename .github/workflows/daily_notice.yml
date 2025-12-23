@@ -2,8 +2,8 @@ name: Daily Inha Notice
 
 on:
   schedule:
-    # 매일 한국 시간 오전 9시 실행 (UTC 기준 0시)
-    - cron: '0 0 * * *'
+    # 매일 평일 한국 시간 오전 10시 실행 (UTC 기준 1시)
+    - cron: '0 1 * * 1-5'
   # 수동으로 버튼 눌러서 실행해보고 싶을 때 필요
   workflow_dispatch:
 
