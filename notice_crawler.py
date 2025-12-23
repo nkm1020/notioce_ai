@@ -6,7 +6,12 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime
-import google.generativeai as genai
+from datetime import datetime
+try:
+    import google.generativeai as genai
+    HAS_GENAI = True
+except ImportError:
+    HAS_GENAI = False
 
 # Selenium 관련 임포트
 from selenium import webdriver
@@ -29,10 +34,16 @@ TO_EMAIL = os.getenv("TO_EMAIL")
 SENT_NOTICES_FILE = "sent_notices.json"
 
 # Gemini 설정
-genai.configure(api_key=GEMINI_API_KEY)
-# 주의: google.generativeai가 deprecated될 수 있다는 로그가 있었으므로, 
-# 추후에는 google-genai 패키지로 마이그레이션 고려. 현재는 유지.
-model = genai.GenerativeModel('gemini-1.5-flash')
+model = None
+if HAS_GENAI and GEMINI_API_KEY:
+    try:
+        genai.configure(api_key=GEMINI_API_KEY)
+        model = genai.GenerativeModel('gemini-2.5-flash')
+    except Exception as e:
+        print(f"Gemini 설정 실패: {e}")
+        model = None
+else:
+    print("Gemini API 키가 없거나 라이브러리가 로드되지 않아 AI 요약 기능을 사용할 수 없습니다.")
 
 def get_driver():
     """Selenium WebDriver 설정을 하고 드라이버 객체를 반환합니다."""
@@ -77,29 +88,48 @@ def get_inha_notices(driver):
         )
     except Exception as e:
         print(f"페이지 로딩 대기 시간 초과 또는 요소 찾기 실패: {e}")
-        # 실패해도 일단 진행해봄 (소스가 로드되었을 수도 있음)
 
-    notices = []
+    # 오늘과 어제 날짜 계산
+    now = datetime.now()
+    today = now.date()
+    yesterday_date = today.replace(day=today.day - 1) # simple logic, might fail on 1st of month. using timedelta is better
+    from datetime import timedelta
+    yesterday = today - timedelta(days=1)
+    
+    print(f"기준 날짜: {today} ~ {yesterday}")
+
+    filtered_notices = []
     
     # 공지사항 행들 찾기
     rows = driver.find_elements(By.CSS_SELECTOR, ".artclTable tbody tr")
-    print(f"찾은 행 개수: {len(rows)}")
+    print(f"총 행 개수: {len(rows)}")
     
     for row in rows:
         try:
-            # 제목 및 링크 요소 찾기 (브라우저 검사 결과 반영)
+            # 날짜 찾기
+            date_text = row.find_element(By.CSS_SELECTOR, "._artclTdRdate").text.strip()
+            # 포맷: YYYY.MM.DD. 또는 YYYY.MM.DD
+            clean_date = date_text.rstrip('.')
+            notice_date = datetime.strptime(clean_date, "%Y.%m.%d").date()
+            
+            # 날짜 필터링 (오늘 또는 어제)
+            if notice_date < yesterday:
+                continue
+
+            # 제목 및 링크 요소 찾기
             title_tag = row.find_element(By.CSS_SELECTOR, "._artclTdTitle a")
             title = title_tag.text.strip()
             link = title_tag.get_attribute('href')
             
-            # 날짜 찾기
-            date_text = row.find_element(By.CSS_SELECTOR, "._artclTdRdate").text.strip()
-            
-            notices.append({"title": title, "link": link, "date": date_text})
+            notice_data = {"title": title, "link": link, "date": date_text}
+            filtered_notices.append(notice_data)
+
         except Exception as e:
+            # 날짜 파싱 실패 등 무시
             continue
-            
-    return notices
+    
+    print(f"날짜 필터링 후 공지: {len(filtered_notices)}개")
+    return filtered_notices
 
 # 2. 본문 내용 가져오기 (Selenium 사용)
 def get_notice_content(driver, url):
@@ -116,6 +146,9 @@ def get_notice_content(driver, url):
 
 # 3. AI 요약 함수 (GPT) - 기존 유지
 def summarize_text(text):
+    if model is None:
+        return "AI 요약 기능이 비활성화되어 있습니다 (API 키 없음 또는 라이브러리 로드 실패)."
+
     if len(text) > 5000:
         text = text[:5000]
         
@@ -170,9 +203,7 @@ def main():
         if notice['link'] not in sent_links:
             new_notices.append(notice)
     
-    if is_manual_run and len(new_notices) > 3:
-        new_notices = new_notices[:3]
-    elif len(new_notices) > 10:
+    if len(new_notices) > 10:
         new_notices = new_notices[:10]
 
     if not new_notices:
