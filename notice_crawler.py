@@ -137,10 +137,18 @@ def get_notice_content(driver, url):
         driver.get(url)
         # 본문 로딩 대기
         WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, ".view-con"))
+            EC.presence_of_element_located((By.CSS_SELECTOR, ".artclView"))
         )
-        content_element = driver.find_element(By.CSS_SELECTOR, ".view-con")
-        return content_element.text.strip()
+        content_element = driver.find_element(By.CSS_SELECTOR, ".artclView")
+        text = content_element.text.strip()
+        
+        # 텍스트가 너무 적은 경우 (이미지 공지 가능성)
+        if len(text) < 100:
+            imgs = content_element.find_elements(By.TAG_NAME, "img")
+            if imgs:
+                return "[이미지 공지] 상세 내용은 본문 이미지를 확인해주세요."
+        
+        return text
     except Exception as e:
         return f"본문 로딩 실패: {e}"
 
@@ -227,11 +235,16 @@ def main():
         print(f"처리 중: {notice['title']}")
         try:
             full_content = get_notice_content(driver, notice['link'])
-            # API 할당량 제한(RPM) 방지를 위해 넉넉히 대기
-            print("API 호출 전 20초 대기...")
-            time.sleep(20) 
             
-            summary = summarize_text(full_content)
+            # 이미지 공지인 경우 AI 요약 스킵
+            if full_content.startswith("[이미지 공지]"):
+                summary = "📸 이미지로 된 공지사항입니다. 링크를 클릭하여 내용을 확인하세요."
+                print("이미지 공지 감지됨. AI 요약 건너뜀.")
+            else:
+                # API 할당량 제한(RPM) 방지를 위해 넉넉히 대기
+                print("API 호출 전 20초 대기...")
+                time.sleep(20) 
+                summary = summarize_text(full_content)
             
             report_content += f"[{notice['title']}]\n"
             report_content += f"날짜: {notice['date']}\n"
