@@ -38,7 +38,7 @@ model = None
 if HAS_GENAI and GEMINI_API_KEY:
     try:
         genai.configure(api_key=GEMINI_API_KEY)
-        model = genai.GenerativeModel('gemini-2.5-flash')
+        model = genai.GenerativeModel('gemini-2.5-flash-lite')
     except Exception as e:
         print(f"Gemini 설정 실패: {e}")
         model = None
@@ -144,7 +144,7 @@ def get_notice_content(driver, url):
     except Exception as e:
         return f"본문 로딩 실패: {e}"
 
-# 3. AI 요약 함수 (GPT) - 기존 유지
+# 3. AI 요약 함수 (GPT) - Retry Logic 추가
 def summarize_text(text):
     if model is None:
         return "AI 요약 기능이 비활성화되어 있습니다 (API 키 없음 또는 라이브러리 로드 실패)."
@@ -154,11 +154,20 @@ def summarize_text(text):
         
     prompt = f"다음은 대학교 공지사항이야. 내용을 읽기 쉽게 3줄로 핵심만 요약해줘. 말투는 '~함'체로 간결하게 해줘:\n\n{text}"
     
-    try:
-        response = model.generate_content(prompt)
-        return response.text
-    except Exception as e:
-        return f"요약 실패: {e}"
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            response = model.generate_content(prompt)
+            return response.text
+        except Exception as e:
+            error_msg = str(e)
+            if "429" in error_msg:
+                print(f"API 할당량 초과 (429). 60초 대기 후 재시도... ({attempt+1}/{max_retries})")
+                time.sleep(60)
+            else:
+                return f"요약 실패: {e}"
+    
+    return "요약 실패: API 할당량 초과로 인해 3회 재시도했으나 실패했습니다."
 
 # 4. 이메일 전송 함수 - 기존 유지
 def send_email(subject, body):
@@ -218,9 +227,9 @@ def main():
         print(f"처리 중: {notice['title']}")
         try:
             full_content = get_notice_content(driver, notice['link'])
-            # API 할당량 제한(5 RPM) 방지를 위해 15초 대기
-            print("API 속도 제한 준수를 위해 15초 대기 중...")
-            time.sleep(15) 
+            # API 할당량 제한(RPM) 방지를 위해 넉넉히 대기
+            print("API 호출 전 20초 대기...")
+            time.sleep(20) 
             
             summary = summarize_text(full_content)
             
