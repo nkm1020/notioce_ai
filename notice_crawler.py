@@ -218,8 +218,9 @@ def main():
         print(f"처리 중: {notice['title']}")
         try:
             full_content = get_notice_content(driver, notice['link'])
-            # 너무 빨리 요청하면 차단될 수 있으므로 약간의 딜레이
-            time.sleep(1) 
+            # API 할당량 제한(5 RPM) 방지를 위해 15초 대기
+            print("API 속도 제한 준수를 위해 15초 대기 중...")
+            time.sleep(15) 
             
             summary = summarize_text(full_content)
             
