@@ -1,0 +1,39 @@
+C:\Users\kangmin\Desktop\notice\notice_crawler.py:9: FutureWarning: 
+
+All support for the `google.generativeai` package has ended. It will no longer be receiving 
+updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
+See README for more details:
+
+https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
+
+  import google.generativeai as genai
+실행 모드: 자동(일반)
+공지사항 페이지 접속 중...
+페이지 로딩 대기 시간 초과 또는 요소 찾기 실패: Message: 
+Stacktrace:
+Symbols not available. Dumping unresolved backtrace:
+	0x12b12d3
+	0x12b1314
+	0x109e6dd
+	0x10e93a5
+	0x10e977b
+	0x1130382
+	0x110b534
+	0x112db13
+	0x110b2e6
+	0x10dd321
+	0x10de1d4
+	0x1505314
+	0x15008cb
+	0x151d1aa
+	0x12cb1d8
+	0x12d31dd
+	0x12b95d8
+	0x12b9799
+	0x12a3b28
+	0x74e45d49
+	0x773cd5db
+	0x773cd561
+
+찾은 행 개수: 0
+새로운 공지사항이 없습니다.

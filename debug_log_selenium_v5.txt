@@ -1,0 +1,52 @@
+C:\Users\kangmin\Desktop\notice\notice_crawler.py:9: FutureWarning: 
+
+All support for the `google.generativeai` package has ended. It will no longer be receiving 
+updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
+See README for more details:
+
+https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
+
+  import google.generativeai as genai
+실행 모드: 자동(일반)
+공지사항 페이지 접속 중...
+페이지 로딩 대기 시간 초과 또는 요소 찾기 실패: Message: 
+Stacktrace:
+Symbols not available. Dumping unresolved backtrace:
+	0x12b12d3
+	0x12b1314
+	0x109e6dd
+	0x10e93a5
+	0x10e977b
+	0x1130382
+	0x110b534
+	0x112db13
+	0x110b2e6
+	0x10dd321
+	0x10de1d4
+	0x1505314
+	0x15008cb
+	0x151d1aa
+	0x12cb1d8
+	0x12d31dd
+	0x12b95d8
+	0x12b9799
+	0x12a3b28
+	0x74e45d49
+	0x773cd5db
+	0x773cd561
+
+현재 URL: https://www.inha.ac.kr/kr/950/subview.do
+찾은 행 개수: 21
+보낼 공지사항: 10개
+처리 중: 2025학년도 동계방학 대기업 인적성 및 NCS 대비 프로그램 안내
+처리 중: 2026년 지역인재 7급 채용 대비 PSAT 및 헌법 파이널 프로그램 (접수: ~1/23)
+처리 중: [학부-국가근로] 2026학년도 1학기 국가근로장학금 신청 안내
+처리 중: [학부-국가장학] 2026년 1학기 국가장학금 1차 신청 안내
+처리 중: 2025학년도 동계 계절학기 시행 안내
+처리 중: [교육효과성센터] 25-2학기 핵심역량 및 전공능력 진단 시행 안내(스타벅스 기프트콘 추첨 증정)
+처리 중: 서호관 복전 안내 - 2025년 12월 21일(일) 새글
+처리 중: 교내 전체 복전 안내(서호관 제외) - 2025년 12월 21일(일) 새글
+처리 중: [학생지원팀] 2025학년도 2학기 사회봉사지원금 및 ‘Remember0727’ 장학금 신청 안내
+처리 중: [창업지원단] 제11회 아랩 나도 사장님(온라인 마켓) 숏폼 마케터 과정 참여자 모집(~12.19)
+이메일 발송 완료!
+보낸 목록 업데이트 완료.

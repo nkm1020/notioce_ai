@@ -2,8 +2,8 @@ name: Daily Inha Notice
 
 on:
   schedule:
-    # 매일 한국 시간 오전 9시 실행 (UTC 기준 0시)
-    - cron: '0 0 * * *'
+    # 매일 한국 시간 오전 10시, 12시 실행 (UTC 기준 1시, 3시)
+    - cron: '0 1,3 * * *'
   # 수동으로 버튼 눌러서 실행해보고 싶을 때 필요
   workflow_dispatch:
 
@@ -31,7 +31,6 @@ jobs:
     - name: 파이썬 스크립트 실행
       env:
         # 아까 Settings에 등록한 비밀번호들을 환경변수로 불러옴
-        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         EMAIL_ADDRESS: ${{ secrets.EMAIL_ADDRESS }}
         EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
         TO_EMAIL: ${{ secrets.TO_EMAIL }}

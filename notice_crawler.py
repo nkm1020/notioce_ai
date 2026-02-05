@@ -6,7 +6,6 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime
-import google.generativeai as genai
 
 # Selenium 관련 임포트
 from selenium import webdriver
@@ -22,17 +21,10 @@ load_dotenv()
 
 # 설정 값
 INHA_NOTICE_URL = "https://www.inha.ac.kr/kr/950/subview.do" 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 EMAIL_ADDRESS = os.getenv("EMAIL_ADDRESS")
 EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
 TO_EMAIL = os.getenv("TO_EMAIL")
 SENT_NOTICES_FILE = "sent_notices.json"
-
-# Gemini 설정
-genai.configure(api_key=GEMINI_API_KEY)
-# 주의: google.generativeai가 deprecated될 수 있다는 로그가 있었으므로, 
-# 추후에는 google-genai 패키지로 마이그레이션 고려. 현재는 유지.
-model = genai.GenerativeModel('gemini-1.5-flash')
 
 def get_driver():
     """Selenium WebDriver 설정을 하고 드라이버 객체를 반환합니다."""
@@ -101,32 +93,6 @@ def get_inha_notices(driver):
             
     return notices
 
-# 2. 본문 내용 가져오기 (Selenium 사용)
-def get_notice_content(driver, url):
-    try:
-        driver.get(url)
-        # 본문 로딩 대기
-        WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, ".view-con"))
-        )
-        content_element = driver.find_element(By.CSS_SELECTOR, ".view-con")
-        return content_element.text.strip()
-    except Exception as e:
-        return f"본문 로딩 실패: {e}"
-
-# 3. AI 요약 함수 (GPT) - 기존 유지
-def summarize_text(text):
-    if len(text) > 5000:
-        text = text[:5000]
-        
-    prompt = f"다음은 대학교 공지사항이야. 내용을 읽기 쉽게 3줄로 핵심만 요약해줘. 말투는 '~함'체로 간결하게 해줘:\n\n{text}"
-    
-    try:
-        response = model.generate_content(prompt)
-        return response.text
-    except Exception as e:
-        return f"요약 실패: {e}"
-
 # 4. 이메일 전송 함수 - 기존 유지
 def send_email(subject, body):
     msg = MIMEMultipart()
@@ -186,16 +152,9 @@ def main():
     for notice in new_notices:
         print(f"처리 중: {notice['title']}")
         try:
-            full_content = get_notice_content(driver, notice['link'])
-            # 너무 빨리 요청하면 차단될 수 있으므로 약간의 딜레이
-            time.sleep(1) 
-            
-            summary = summarize_text(full_content)
-            
             report_content += f"[{notice['title']}]\n"
             report_content += f"날짜: {notice['date']}\n"
             report_content += f"링크: {notice['link']}\n"
-            report_content += f"요약:\n{summary}\n"
             report_content += "-" * 30 + "\n\n"
             
             if not is_manual_run:
