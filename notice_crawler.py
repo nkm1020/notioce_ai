@@ -20,10 +20,6 @@ from selenium.common.exceptions import NoSuchElementException, TimeoutException
 # 환경 변수 로드
 load_dotenv()
 
-# ==========================================
-# [설정] 수집할 게시판 목록 (여기에 링크를 추가하세요)
-# 중요: 이 리스트의 순서대로 이메일에 내용이 작성됩니다.
-# ==========================================
 TARGET_BOARDS = [
     {
         "name": "인하대 일반공지", 
