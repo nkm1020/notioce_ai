@@ -2,10 +2,26 @@ name: Daily Inha Notice
 
 on:
   schedule:
-    # 매일 평일 한국 시간 오전 10시 15분에 실행 - UTC 기준 1시 15분 실행 
-    - cron: '15 1 * * 1-5'
-  # 수동으로 버튼 눌러서 실행해보고 싶을 때 필요
+    # 백업용 스케줄. GitHub 자체 스케줄은 실제로 5~6시간씩 밀려서(10:15 예약 → 15~16시 실행)
+    # 정시 실행은 외부 크론(cron-job.org)이 workflow_dispatch(run_mode=normal)로 호출함.
+    # 그날 확인을 이미 마쳤으면 스크립트가 알아서 건너뜀 (메일은 새 공고가 있을 때만 감).
+    # GitHub가 예약 실행을 가끔 통째로 빼먹기도 해서 하루 세 번 걸어둠 (정각·15분 단위는 혼잡해서 피함)
+    # 매일 KST 07:37 / 10:37 / 14:37
+    - cron: '37 22 * * *'
+    - cron: '37 1 * * *'
+    - cron: '37 5 * * *'
   workflow_dispatch:
+    inputs:
+      run_mode:
+        description: 'test = 중복 무시하고 테스트 발송(기록 안 남김) / normal = 정식 실행'
+        type: choice
+        options: [test, normal]
+        default: test
+
+# 외부 크론과 백업 스케줄이 겹쳐도 동시에 돌지 않게
+concurrency:
+  group: daily-notice
+  cancel-in-progress: false
 
 jobs:
   run-crawler:
@@ -16,12 +32,13 @@ jobs:
 
     steps:
     - name: 저장소 코드 가져오기
-      uses: actions/checkout@v3
+      uses: actions/checkout@v5
 
-    - name: 파이썬 설정 (3.10 버전)
-      uses: actions/setup-python@v4
+    - name: 파이썬 설정
+      uses: actions/setup-python@v6
       with:
-        python-version: '3.10'
+        python-version: '3.12'
+        cache: pip
 
     - name: 라이브러리 설치
       run: |
@@ -30,18 +47,22 @@ jobs:
 
     - name: 파이썬 스크립트 실행
       env:
-        # 아까 Settings에 등록한 비밀번호들을 환경변수로 불러옴
         EMAIL_ADDRESS: ${{ secrets.EMAIL_ADDRESS }}
         EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
         TO_EMAIL: ${{ secrets.TO_EMAIL }}
         GITHUB_EVENT_NAME: ${{ github.event_name }}
+        RUN_MODE: ${{ inputs.run_mode }}
       run: python notice_crawler.py
 
     - name: 변경사항(보낸 목록) 저장 및 커밋
       run: |
         git config --global user.name 'Notice Bot'
         git config --global user.email 'bot@noreply.github.com'
-        git add sent_notices.json
-        # 변경사항이 있을 때만 커밋 (오류 방지)
-        git commit -m "Update sent notices list" || echo "새로운 변경사항이 없습니다."
-        git push
+        for f in sent_notices.json state.json; do [ -f "$f" ] && git add "$f"; done
+        # 변경사항이 있을 때만 커밋
+        if git commit -m "Update sent notices list"; then
+          git pull --rebase
+          git push
+        else
+          echo "새로운 변경사항이 없습니다."
+        fi

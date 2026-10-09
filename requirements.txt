@@ -1,6 +1,6 @@
 requests
 beautifulsoup4
-google-generativeai>=0.7.0
 python-dotenv
+# requests가 막힐 때만 쓰는 대체 경로
 selenium
 webdriver-manager
