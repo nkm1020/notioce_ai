@@ -312,7 +312,7 @@ def send_email(subject, body):
 def main():
     event_name = os.getenv("GITHUB_EVENT_NAME")
     # 수동 실행(Actions 화면의 Run workflow)은 테스트: 중복 체크 없이 보내고 기록도 안 남김.
-    # 외부 크론에서 run_mode=normal 로 호출하면 정식 실행으로 취급.
+    # run_mode=normal 로 수동 실행하면 정식 실행으로 취급.
     is_manual_run = event_name == "workflow_dispatch" and os.getenv("RUN_MODE") != "normal"
     dry_run = bool(os.getenv("DRY_RUN"))
     persist = not is_manual_run and not dry_run
@@ -321,9 +321,9 @@ def main():
     today = now.date()
     state = load_json(STATE_FILE, {})
 
-    # GitHub 자체 스케줄은 지연이 심해 백업용. 오늘 이미 확인을 마쳤으면 건너뜀.
+    # 새벽 스케줄을 여러 번 걸어둠. 오늘 이미 확인을 마쳤으면 나머지는 건너뜀.
     if event_name == "schedule" and state.get("last_check_date") == str(today):
-        print(f"오늘({today}) 이미 확인함 → 백업 스케줄 건너뜀")
+        print(f"오늘({today}) 이미 확인함 → 건너뜀")
         return
 
     sent_links = [] if is_manual_run else load_json(SENT_NOTICES_FILE, [])
@@ -366,7 +366,7 @@ def main():
         print("새로운 공지사항이 없습니다.")
 
     # 해외 파견 공고: 확인은 하루 한 번 꼭, 메일은 새 공고가 있을 때만.
-    # 검색이나 발송이 실패하면 '오늘 확인함'으로 남기지 않아서 다음 백업 스케줄이 다시 시도함.
+    # 검색이나 발송이 실패하면 '오늘 확인함'으로 남기지 않아서 다음 스케줄이 다시 시도함.
     if overseas_error:
         print(f"해외 파견 공고 확인 실패({overseas_error}) → 다음 실행에서 재시도")
         return

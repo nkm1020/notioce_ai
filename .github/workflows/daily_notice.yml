@@ -2,14 +2,13 @@ name: Daily Inha Notice
 
 on:
   schedule:
-    # 백업용 스케줄. GitHub 자체 스케줄은 실제로 5~6시간씩 밀려서(10:15 예약 → 15~16시 실행)
-    # 정시 실행은 외부 크론(cron-job.org)이 workflow_dispatch(run_mode=normal)로 호출함.
-    # 그날 확인을 이미 마쳤으면 스크립트가 알아서 건너뜀 (메일은 새 공고가 있을 때만 감).
-    # GitHub가 예약 실행을 가끔 통째로 빼먹기도 해서 하루 세 번 걸어둠 (정각·15분 단위는 혼잡해서 피함)
-    # 매일 KST 07:37 / 10:37 / 14:37
-    - cron: '37 22 * * *'
-    - cron: '37 1 * * *'
-    - cron: '37 5 * * *'
+    # 공지는 9~17시에 올라오니 새벽에 확인. GitHub 스케줄은 몇 시간씩 밀리기도 해서
+    # (10:15 예약 → 15~16시 실행된 적 있음) 자정 넘어 일찍 걸어두면 아침 전에는 끝남.
+    # 예약 실행을 가끔 통째로 빼먹기도 해서 세 번 걸어두고, 그날 확인을 마쳤으면 나머지는 건너뜀.
+    # 매일 KST 00:37 / 03:37 / 06:37 (정각·15분 단위는 혼잡해서 피함)
+    - cron: '37 15 * * *'
+    - cron: '37 18 * * *'
+    - cron: '37 21 * * *'
   workflow_dispatch:
     inputs:
       run_mode:
@@ -18,7 +17,7 @@ on:
         options: [test, normal]
         default: test
 
-# 외부 크론과 백업 스케줄이 겹쳐도 동시에 돌지 않게
+# 스케줄끼리 겹쳐도 동시에 돌지 않게
 concurrency:
   group: daily-notice
   cancel-in-progress: false
